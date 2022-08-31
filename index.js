@@ -339,7 +339,7 @@ program
     "Pure JS* implementation of pactester. \n\n * (Almost.  Currently still relies on c++.)"
   )
   .helpOption(false)
-  .version("0.0.3", "-v")
+  .version("0.0.4", "-v")
   .option(
     "-p <pacfile>",
     "PAC file to test (specify '-' to read from standard input)"
