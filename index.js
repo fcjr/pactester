@@ -358,7 +358,7 @@ if (!url && !urlslist) {
 
 if (pacfile === "-") {
   // Read pacfile from stdin.
-  const stdin = readFileSync(0, "utf-8");
+  const stdin = readFileSync(process.stdin.fd, "utf-8");
   if (!stdin || stdin.length <= 0) {
     console.error("Expected piped data but found none");
     process.exit(1);
