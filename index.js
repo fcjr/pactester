@@ -309,6 +309,26 @@ function getHostFromUrl(url) {
   return host;
 }
 
+function readStdin() {
+  const reader = readline.createInterface({
+    input: process.stdin,
+  });
+
+  return new Promise((resolve) => {
+    var stdin = "";
+    reader
+      .on("line", (line) => {
+        if (!line) {
+          return;
+        }
+        stdin = stdin + line + "\n";
+      })
+      .on("close", () => {
+        resolve(stdin);
+      });
+  });
+}
+
 // ------ PROGRAM ------
 
 const { program } = require("commander");
@@ -343,77 +363,80 @@ var host = options?.h;
 const client_ip = options?.c;
 const urlslist = options?.f;
 
-if (Object.entries(options).length === 0) {
-  program.help();
-}
-
-if (!pacfile) {
-  console.error("You didn't specify the PAC file");
-  program.help();
-}
-if (!url && !urlslist) {
-  console.error("You didn't specify the URL");
-  program.help();
-}
-
-if (pacfile === "-") {
-  // Read pacfile from stdin.
-  const stdin = readFileSync(process.stdin.fd, "utf-8");
-  if (!stdin || stdin.length <= 0) {
-    console.error("Expected piped data but found none");
-    process.exit(1);
-  }
-  eval(stdin);
-} else {
-  eval(readFileSync(pacfile).toString());
-}
-
-if (!FindProxyForURL || typeof FindProxyForURL !== "function") {
-  console.error(
-    `Failed to find FindProxyForURL function in pac file: ${pacfile}.`
-  );
-  process.exit(1);
-}
-
-if (client_ip) {
-  _client_ip = client_ip;
-}
-
-if (url) {
-  // If the host was not explicitly given, get it from the URL.
-  // If that fails, return with error (the get_host_from_url()
-  // function will print a proper error message in that case).
-  if (!host) {
-    host = getHostFromUrl(url);
+// Async IIFE main function
+(async () => {
+  if (Object.entries(options).length === 0) {
+    program.help();
   }
 
-  console.log(FindProxyForURL(url, host));
-  process.exit(0);
-} else if (urlslist) {
-  const reader = readline.createInterface({
-    input: createReadStream(urlslist),
-    output: process.stdout,
-    terminal: false,
-  });
+  if (!pacfile) {
+    console.error("You didn't specify the PAC file");
+    program.help();
+  }
+  if (!url && !urlslist) {
+    console.error("You didn't specify the URL");
+    program.help();
+  }
 
-  reader.on("line", (line) => {
-    // trim whitespace
-    line = line.trim();
-
-    // skip comments
-    if (line.startsWith("#")) {
-      console.log(line);
-      return;
-    }
-
-    // url == everything before the first space
-    const url = line.split(" ")[0];
-    try {
-      const proxy = FindProxyForURL(url, getHostFromUrl(url));
-      console.log(`${url} : ${proxy}`);
-    } catch (e) {
-      console.error(`Problem in finding proxy for ${line}`);
+  if (pacfile === "-") {
+    // Read pacfile from stdin.
+    const stdin = await readStdin();
+    if (!stdin || stdin.length <= 0) {
+      console.error("Expected piped data but found none");
       process.exit(1);
     }
-  });
-}
+    eval(stdin);
+  } else {
+    eval(readFileSync(pacfile).toString());
+  }
+
+  if (!FindProxyForURL || typeof FindProxyForURL !== "function") {
+    console.error(
+      `Failed to find FindProxyForURL function in pac file: ${pacfile}.`
+    );
+    process.exit(1);
+  }
+
+  if (client_ip) {
+    _client_ip = client_ip;
+  }
+
+  if (url) {
+    // If the host was not explicitly given, get it from the URL.
+    // If that fails, return with error (the get_host_from_url()
+    // function will print a proper error message in that case).
+    if (!host) {
+      host = getHostFromUrl(url);
+    }
+
+    console.log(FindProxyForURL(url, host));
+    process.exit(0);
+  } else if (urlslist) {
+    const reader = readline.createInterface({
+      input: createReadStream(urlslist),
+      output: process.stdout,
+      terminal: false,
+    });
+
+    reader.on("line", (line) => {
+      // trim whitespace
+      line = line.trim();
+
+      // skip comments
+      if (line.startsWith("#")) {
+        console.log(line);
+        return;
+      }
+
+      // url == everything before the first space
+      const url = line.split(" ")[0];
+      try {
+        const proxy = FindProxyForURL(url, getHostFromUrl(url));
+        console.log(`${url} : ${proxy}`);
+      } catch (e) {
+        console.error(`Problem in finding proxy for ${line}`);
+        process.exit(1);
+      }
+    });
+  }
+})();
