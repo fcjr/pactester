@@ -1,6 +1,6 @@
 {
   "name": "pactester",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Pure JS* implementation of pactester.",
   "homepage": "https://github.com/fcjr/pactester#README",
   "bin": {
