@@ -1,0 +1,24 @@
+{
+  "name": "pactester",
+  "version": "0.0.1",
+  "description": "Pure JS* implementation of pactester.",
+  "homepage": "https://github.com/fcjr/pactester#README",
+  "bin": {
+    "pactester": "index.js"
+  },
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/fcjr/pactester.git"
+  },
+  "keywords": ["cli", "pac", "proxy", "auto-config"],
+  "author": "Frank Chiarulli Jr. <frank@frankchiarulli.com> (https://github.com/fcjr)",
+  "engines": {
+    "node:": "^14.17.6",
+    "pnpm": "^7.7.0"
+  },
+  "license": "LGPL-3.0",
+  "dependencies": {
+    "commander": "^9.4.0",
+    "deasync": "^0.1.28"
+  }
+}
