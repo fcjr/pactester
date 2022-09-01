@@ -3,6 +3,7 @@ const dns = require("node:dns");
 const { readFileSync, createReadStream } = require("node:fs");
 const os = require("node:os");
 const readline = require("node:readline");
+const package = require('./package.json');
 
 // TODO don't use deasync
 const deasync = require("deasync");
@@ -339,7 +340,6 @@ program
     "Pure JS* implementation of pactester. \n\n * (Almost.  Currently still relies on c++.)"
   )
   .helpOption(false)
-  .version("0.0.4", "-v")
   .option(
     "-p <pacfile>",
     "PAC file to test (specify '-' to read from standard input)"
@@ -351,8 +351,8 @@ program
     "client IP address (as returned by myIpAddress() function in PAC files), defaults to IP address on which it is running."
   )
   .option("-f <urlslist>", "a file containing list of URLs to be tested.")
-  .option("-v", "print version and exit");
-// .option("-e", "Deprecated: IPv6 extensions are enabled by default now.")
+  // .option("-e", "Deprecated: IPv6 extensions are enabled by default now.")
+  .version(package.version, "-v", "print version and exit");
 
 program.parse();
 
