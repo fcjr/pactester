@@ -18,7 +18,6 @@ Pure JS* implementation of pactester.
  * (Almost.  Currently still relies on c++.)
 
 Options:
-  -v              output the version number
   -p <pacfile>    PAC file to test (specify '-' to read from standard input)
   -u <url>        URL to test for
   -h <host>       Host part of the URL
