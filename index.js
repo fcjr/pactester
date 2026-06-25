@@ -1,21 +1,67 @@
 #!/usr/bin/env node
-const dns = require("node:dns");
 const { readFileSync, createReadStream } = require("node:fs");
 const os = require("node:os");
 const readline = require("node:readline");
+const { Worker } = require("node:worker_threads");
 const package = require('./package.json');
 
-// TODO don't use deasync
-const deasync = require("deasync");
-const _dnsLookup = deasync(dns.lookup);
+// PAC's dnsResolve()/myIpAddress() must return synchronously, but Node's
+// dns.lookup is async. Instead of pulling in a native (C++) addon like
+// deasync, run the lookup in a worker thread and block the main thread on a
+// SharedArrayBuffer until the worker writes the result back. Pure JS, no
+// native compilation required.
+const _worker = new Worker(
+  `
+  const { parentPort } = require("node:worker_threads");
+  const dns = require("node:dns");
+  parentPort.on("message", ({ host, sab }) => {
+    const ctrl = new Int32Array(sab, 0, 3);
+    const bytes = new Uint8Array(sab, 12);
+    const done = (status, address) => {
+      if (status === 1) {
+        const buf = Buffer.from(address, "utf8");
+        bytes.set(buf.subarray(0, bytes.length));
+        Atomics.store(ctrl, 2, Math.min(buf.length, bytes.length));
+      }
+      Atomics.store(ctrl, 1, status);
+      Atomics.store(ctrl, 0, 1);
+      Atomics.notify(ctrl, 0);
+    };
+    // dns.lookup can throw synchronously on bad input (e.g. empty host).
+    // Always signal back so the blocked main thread never hangs.
+    try {
+      dns.lookup(host, (err, address) => {
+        done(err || !address ? 0 : 1, address);
+      });
+    } catch (_) {
+      done(0);
+    }
+  });
+  `,
+  { eval: true }
+);
+// Don't let the worker keep the process alive on its own.
+_worker.unref();
+
+function _dnsLookup(host) {
+  if (!host) {
+    return null;
+  }
+  const sab = new SharedArrayBuffer(1024);
+  const ctrl = new Int32Array(sab, 0, 3);
+  const bytes = new Uint8Array(sab, 12);
+  _worker.postMessage({ host, sab });
+  Atomics.wait(ctrl, 0, 0);
+  if (Atomics.load(ctrl, 1) !== 1) {
+    return null;
+  }
+  const len = Atomics.load(ctrl, 2);
+  return Buffer.from(bytes.subarray(0, len)).toString("utf8");
+}
 
 function dnsResolve(host) {
   try {
-    var ips = _dnsLookup(host);
-    if (ips && ips.length >= 1) {
-      return ips[0];
-    }
-    return null;
+    return _dnsLookup(host);
   } catch (_) {
     return null;
   }
@@ -299,15 +345,11 @@ function getHostFromUrl(url) {
   }
 
   // Seek until next /, : or end of string.
-  const nextSlash = host.indexOf("/");
-  const nextColon = host.indexOf(":");
-  if (nextSlash > 0 || nextColon > 0) {
-    host =
-      nextSlash < nextColon
-        ? host.substr(0, nextSlash)
-        : host.substr(0, nextColon);
+  var end = 0;
+  while (end < host.length && host[end] !== "/" && host[end] !== ":") {
+    end++;
   }
-  return host;
+  return host.substr(0, end);
 }
 
 function readStdin() {
@@ -336,9 +378,7 @@ const { program } = require("commander");
 
 program
   .name("pactester")
-  .description(
-    "Pure JS* implementation of pactester. \n\n * (Almost.  Currently still relies on c++.)"
-  )
+  .description("Pure JS implementation of pactester.")
   .helpOption(false)
   .option(
     "-p <pacfile>",

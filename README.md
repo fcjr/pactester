@@ -1,6 +1,6 @@
 # pactester
 
-A Pure JS* implementation of [pactester](https://github.com/manugarg/pacparser).
+A Pure JS implementation of [pactester](https://github.com/manugarg/pacparser).
 
 ## Installation
 
@@ -13,9 +13,7 @@ npm i -g pactester
 ```sh
 Usage: pactester [options]
 
-Pure JS* implementation of pactester.
-
- * (Almost.  Currently still relies on c++.)
+Pure JS implementation of pactester.
 
 Options:
   -p <pacfile>    PAC file to test (specify '-' to read from standard input)

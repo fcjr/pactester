@@ -1,10 +1,13 @@
 {
   "name": "pactester",
   "version": "0.0.6",
-  "description": "Pure JS* implementation of pactester.",
+  "description": "Pure JS implementation of pactester.",
   "homepage": "https://github.com/fcjr/pactester#README",
   "bin": {
     "pactester": "index.js"
+  },
+  "scripts": {
+    "test": "node --test"
   },
   "repository": {
     "type" : "git",
@@ -18,7 +21,6 @@
   },
   "license": "LGPL-3.0",
   "dependencies": {
-    "commander": "^9.4.0",
-    "deasync": "^0.1.28"
+    "commander": "^9.4.0"
   }
 }
